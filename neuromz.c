@@ -1,11 +1,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ann.c"
-#include "tools.h"
+#include "ann.h"
+#include "neuromz.h"
+#include "config.h"
+
+
+extern struct trainSet * trnHead;
+extern double *  temp;//we should allocate as the bigest layer neurons.
+extern char * filename;
+extern double conv_value;
+extern struct layers * layer;
+extern uint16 layers_count;
+extern unsigned long steps;
+extern double * output_val;
+extern double learnRate;//we can change it later by the main function
+
+
 
 int main(int argc,char * argv[]){
-	
+
 	if(argc<2)
 		command();
 	else
