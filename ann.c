@@ -1,8 +1,18 @@
 #include "ann.h"
-#include "tools.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
+
+struct trainSet * trnHead=0;
+double *  temp=0;//we should allocate as the bigest layer neurons.
+char * filename;
+double conv_value=0.005;
+struct layers * layer=0;
+uint16 layers_count;
+unsigned long steps=0;
+double * output_val=0;
+double learnRate = 0.1;//we can change it later by the main function
 
 
 double sigmoid(double value){
