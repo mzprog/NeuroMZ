@@ -1,9 +1,9 @@
 #ifndef _TOOLS_H_
 #define _TOOLS_H_
 
-char * filename=0;
+#include <stdlib.h>
+
 char line[256];
-double conv_value=0.005;
 char QUIT=0;
 struct words{
 	char t[32];
@@ -11,14 +11,6 @@ struct words{
 	struct words * next;
 };
 
-struct trainSet{
-
-	double * input;
-	double * output;
-	struct trainSet * next;
-};
-
-struct trainSet * trnHead=NULL;
 
 void command();
 void testArg(int argc,char * argv[]);
