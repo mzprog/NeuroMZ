@@ -1,23 +1,23 @@
 # NeuroMZ
-##Artificial Neural Network Manager.
-NeuroMZ is created to have simple processing form of the artificial neural network.
-current version: 1.0
-
+## Artificial Neural Network Manager.
+NeuroMZ is created to have simple processing form of the artificial neural network.<br>
+current version: 1.0<br>
+<br>
 to learn how to use NeuroMZ you can read the Neuromz.pdf in the docs directory ;
 
 
 ## Instaling NeuroMZ
 
 if you are an Ubuntu user:
-
-sudo add-apt-repository ppa:mzprogrammer/neuromz
-sudo apt-get update
-sudo apt-get install neuromz
-
-otherwise open terminal:
-./configure
-make
-make install
+<br>
+sudo add-apt-repository ppa:mzprogrammer/neuromz<br>
+sudo apt-get update<br>
+sudo apt-get install neuromz<br>
+<br>
+otherwise open terminal:<br>
+./configure<br>
+make<br>
+make install<br>
 
 ## targets
 
