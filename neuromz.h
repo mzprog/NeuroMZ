@@ -1,23 +1,14 @@
 #ifndef _TOOLS_H_
 #define _TOOLS_H_
 
-#include <stdlib.h>
-
-char line[256];
-char QUIT=0;
 struct words{
 	char t[32];
 	struct words * prv;
 	struct words * next;
 };
 
-
-void command();
-void testArg(int argc,char * argv[]);
 void clearWords(struct words *w);
-void getCMD(char*text , int limit);
-void getStarter();
-void checkLine();
+void checkLine(char * line);
 void newNode(char * txt,struct words * w);
 void printError();
 //the command functions 
@@ -32,6 +23,5 @@ void addTrainSet(double *in,double * out );//should convert to int
 void clearTrainSet();
 int isNum(char * ch);
 void showDet();
-void versionP();
-void printHelp(struct words *w, int count);
+
 #endif
