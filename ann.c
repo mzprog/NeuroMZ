@@ -1,8 +1,9 @@
 #include "ann.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
-
+#include "actFunc.h"
 
 struct trainSet * trnHead=0;
 double *  temp=0;//we should allocate as the bigest layer neurons.
@@ -14,12 +15,6 @@ unsigned long steps=0;
 double * output_val=0;
 double learnRate = 0.1;//we can change it later by the main function
 
-
-double sigmoid(double value){
-
-	return 1/(1 + exp(-value));
-
-}
 
 
 int INIT_NETWORK(int * layer_number,int layer_size){
@@ -44,7 +39,7 @@ int INIT_NETWORK(int * layer_number,int layer_size){
 	{
 		layer[i].size=layer_number[i];
 		layer[i].neural=(struct neurals *)calloc(layer[i].size+1,sizeof(struct neurals));//i
-		
+		layer[i].ACT_FX=SIGMOID;//use sigmoid function as default		
 		if(layer[i].neural==NULL)
 			return -1;
 		if(i==layer_size-1)
@@ -96,7 +91,7 @@ double * forward(double * data){
 			}
 			sum+=layer[k+1].neural[j].bais;//finaly add the bais
 			layer[k+1].neural[j].x=sum;//then assign it to the x input
-			layer[k+1].neural[j].a=sigmoid(layer[k+1].neural[j].x);//at the end assign the value of activation funtion to var a.
+			layer[k+1].neural[j].a=ACTfunc(layer[k+1].neural[j].x,layer[k+1].ACT_FX);//at the end assign the value of activation funtion to var a.
 		}
 	for(i=0;i<layer[k].size;i++)
 		output_val[i]=layer[k].neural[i].a;
@@ -123,7 +118,8 @@ void backProp(double * target){
 	double delta_k,delta_j;//saving the delta 
 	//find the bais and  weight delta, and correct it for the last layer
 	for(i=0;i<layer[layers_count-1].size;i++){
-		delta_k=(target[i]-layer[layers_count-1].neural[i].a)*layer[layers_count-1].neural[i].a*(1 -layer[layers_count-1].neural[i].a);
+		delta_k=(target[i]-layer[layers_count-1].neural[i].a)*ACTderv(layer[layers_count-1].neural[i].x,layer[layers_count-1].ACT_FX);
+		
 		//correct the bais
 		layer[layers_count-1].neural[i].bais+= learnRate*delta_k;
 //here is temporry value for n=0
@@ -140,7 +136,7 @@ void backProp(double * target){
 			delta_j=0;
 			for(n=0;n<layer[k].size;n++)//here new edition
 				delta_j+=(layer[k-1].weight[j][n].weightV*layer[k-1].weight[j][n].deltaW);
-			delta_j*=(layer[k-1].neural[j].a*(1-layer[k-1].neural[j].a));//final delta j calculation.
+			delta_j*=ACTderv(layer[k-1].neural[j].x,layer[k=1].ACT_FX);//final gelta j calculation.
 			
 			//correct the bais
 			layer[k-1].neural[j].bais+=(learnRate * delta_j);
@@ -175,7 +171,7 @@ int saveNet(char * fileName){
 	head.trainNum=steps;
 	head.learnRate=learnRate;
 	head.conv=conv_value;
-	strcpy(head.version,"1.0");
+	strcpy(head.version,"1.1");
 
 	fptr=fopen(fileName,"w");
 	if(fptr==NULL)
@@ -192,6 +188,12 @@ int saveNet(char * fileName){
 	for(i=0;i<layers_count;i++)
 		temp[i]=layer[i].size;
 	fwrite(temp,sizeof(int),layers_count,fptr);
+	
+	//prepare the activation function element array
+	for(i=0;i<layers_count;i++)
+		temp[i]=layer[i].ACT_FX;
+	fwrite(temp,sizeof(int),layers_count,fptr);
+
 	//now write the weight of the network
 	//find the max
 	for(i=0;i<layers_count;i++)
@@ -274,6 +276,20 @@ int loadNet(char * fileName){
 		fclose(fptr);
 		return -1;
 	}
+	//get the activation function flags
+	if(strcmp(head.version,"1.1")==0)
+	{
+		fread(tempI,sizeof(int),layers_count,fptr);
+		for(i=0;i<layers_count;i++)
+			layer[i].ACT_FX=tempI[i];
+	}
+	else if(strcmp(head.version,"1.0")==0)
+	{
+		//as defualt for v 1.0 that the default activation function is sigmoid
+		for(i=0;i<layers_count;i++)
+			layer[i].ACT_FX=SIGMOID;
+	}
+
 	//getting the weights
 	//find the max
 	for(i=0;i<layers_count;i++)
