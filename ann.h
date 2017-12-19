@@ -23,7 +23,7 @@ struct layers{
 	struct neurals * neural;//pointer to array of neural for a single layer
 	uint16 size;
 	struct matrix ** weight;//the weight's matrix for this layer and the next one
-
+	uint16 ACT_FX;
 
 };
 //define the train set
@@ -53,8 +53,6 @@ double * forward(double * data);//entring an array of double and the result is t
 double cost_fx(double * target_val);//the cost function
 
 void backProp(double * target);
-
-double sigmoid(double value);
 
 int saveNet(char * fileName);
 
