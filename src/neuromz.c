@@ -7,16 +7,17 @@
 
 char QUIT=0;//for quit the command function. 
 
-extern struct trainSet * trnHead;
-extern double *  temp;//we should allocate as the bigest layer neurons.
-extern char * filename;
-extern double conv_value;
-extern struct layers * layer;
-extern uint16 layers_count;
-extern unsigned long steps;
-extern double * output_val;
-extern double learnRate;//we can change it later by the main function
+// extern struct trainSet * trnHead;
+// extern double *  temp;//we should allocate as the bigest layer neurons.
+// extern char * filename;
+// extern double conv_value;
+// extern struct layers * layer;
+// extern uint16 layers_count;
+// extern unsigned long steps;
+// extern double * output_val;
+// extern double learnRate;//we can change it later by the main function
 
+extern NEUROMZ_data * neuromz;
 
 
 void clearWords(struct words *w){
@@ -37,7 +38,9 @@ void checkLine(char * line){
 
 	int i, j=0, len,count_w=0;
 	char tmp[32];
+    
 	struct words * word=(struct words *)malloc(sizeof(struct words));
+    struct words * W_head = word;
 	word->prv=NULL;
 	word->next=NULL;
 	len=strlen(line);
@@ -59,16 +62,17 @@ void checkLine(char * line){
 		}
 
 	}
-
-	while(word->prv!=NULL){
-		word=word->prv;
-	}
+    //return to the start
+    word = W_head;
 	
 	//now we star checking the line
 	if(strcmp(word->t,"exit")==0)
 	{
-		if(layer!=0)
-			freeNet();
+        if(neuromz)
+        {
+            if(neuromz->layer!=0)
+                freeNet();
+        }
 		QUIT=1;
 	}
 	else if(strcmp(word->t,"load")==0)
@@ -93,12 +97,12 @@ void checkLine(char * line){
 	}
 	else if(strcmp(word->t,"clear")==0)
 	{
+        clearTrainSet();
 		freeNet();
-		clearTrainSet();
-		if(filename!=NULL){
-			free(filename);
-			filename=NULL;
-		}
+// 		if(neuromz->filename!=NULL){
+// 			free(neuromz->filename);
+// 			neuromz->filename=NULL;
+// 		}
 	}
 	else if(strcmp(word->t,"learnrate")==0)
 	{
@@ -122,7 +126,7 @@ void checkLine(char * line){
 	}
 	else if(strcmp(word->t,"rmset")==0)
 	{
-		if(layer==NULL)
+		if(neuromz->layer==NULL)
 		{
 			printf("Error: no network to clear its trainning set.\n");
 		}
@@ -184,35 +188,35 @@ void saveFile(struct words * w, int count){
 
 	char *name;
 
-	if(layer==NULL){
+	if(neuromz && neuromz->layer==NULL){
 		printf("Error: no data found to save.\n");
 		return;
 	}
 
 	if(count==1){
-		if(filename==0)
+		if(neuromz->filename==0)
 		{
 			printf("Error: should declare a file name.\n");
 			return;
 		}else
 		{
-			name=filename;
+			name=neuromz->filename;
 		}
 	}
 	else if(count==2)
 	{
 		w=w->next;
 		name=w->t;
-		if(filename!=NULL)
+		if(neuromz->filename!=NULL)
 		{
-			free(filename);
-			filename=NULL;
+			free(neuromz->filename);
+			neuromz->filename=NULL;
 		}
-		filename=(char *)malloc(sizeof(char)*(strlen(name)+1));
-		if(filename==NULL){
+		neuromz->filename=(char *)malloc(sizeof(char)*(strlen(name)+1));
+		if(neuromz->filename==NULL){
 			printf("Error: unknown error in memory.\n");
 		}
-		strcpy(filename,name);
+		strcpy(neuromz->filename,name);
 	}
 	else{
 		printf("Error: invalid data.\n");
@@ -226,7 +230,10 @@ void saveFile(struct words * w, int count){
 }
 
 void loadFile(struct words * w ,int count){
-	if(layer != NULL || filename != NULL){
+    
+	//if(neuromz->layer != NULL || neuromz->filename != NULL){
+    if(neuromz)
+    {
 		printf("Error: Can\'t load file, should clear current network before.\n");
 		return;
 	}
@@ -243,13 +250,13 @@ void loadFile(struct words * w ,int count){
 	}
 	else
 	{	
-		filename=(char *)malloc(sizeof(char)*(strlen(w->t)+1));
-		if(filename==NULL){
+		neuromz->filename=(char *)malloc(sizeof(char)*(strlen(w->t)+1));
+		if(neuromz->filename==NULL){
 			printf("Error: unknown error in memory.\n");
 			freeNet();
 			return;
 		}
-		strcpy(filename,w->t);
+		strcpy(neuromz->filename,w->t);
 	}
 
 }
@@ -259,7 +266,8 @@ int createNet(struct words * w,int count){
 	int i;
 	int *l;
 	
-	if(layer!=NULL)
+	//if(neuromz->layer!=NULL)
+    if(neuromz)
 	{
 		printf("Error: should clear current network brfore.\n");
 		return -1;
@@ -301,17 +309,17 @@ void doForward(struct words *w, int count){
 	double * outputs=NULL;
 	struct words * wt=w;
 
-	if(layer==NULL)
+	if(neuromz && neuromz->layer==NULL)
 	{
 		printf("Error: no network opened in memory.\n");
 		return;
 	}
 
-	if(layer[0].size!=count-1){
-		printf("Error: should enter %d values.\n",layer[0].size);
+	if(neuromz->layer[0].size!=count-1){
+		printf("Error: should enter %d values.\n",neuromz->layer[0].size);
 		return;
 	}
-	inputs=(double * )malloc(sizeof(double)*layer[0].size);
+	inputs=(double * )malloc(sizeof(double)*neuromz->layer[0].size);
 	if(inputs==NULL){
 		printf("Error: unknown error in memory.\n");
 		return;
@@ -330,7 +338,7 @@ void doForward(struct words *w, int count){
 
 	outputs=forward(inputs);
 
-	for(i=0;i<layer[layers_count-1].size;i++)
+	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 		printf("\t%g",outputs[i]);
 	printf("\n");
 	
@@ -348,26 +356,26 @@ void doTrain(struct words * w,int count){
 	struct words *wt=w;
 	double cost_fn;
 	struct trainSet * curSet=NULL;
-	int layerSum = layer[0].size + layer[layers_count-1].size;
+	int layerSum = neuromz->layer[0].size + neuromz->layer[neuromz->layers_count-1].size;
 	int trainNum;
 
-	if(layer==NULL)
+	if(neuromz == NULL && neuromz->layer==NULL)
 	{
 		printf("Error: no network opened in memory.\n");
 		return;
 	}
 
 	if(count != layerSum + 2 && count != layerSum + 3){
-		printf("Error: you should have %d inputs & %d targets.\n",layer[0].size,layer[layers_count-1].size);
+		printf("Error: you should have %d inputs & %d targets.\n",neuromz->layer[0].size,neuromz->layer[neuromz->layers_count-1].size);
 		return;
 	}
 
-	input=(double *)malloc(sizeof(double)*layer[0].size);
+	input=(double *)malloc(sizeof(double)*neuromz->layer[0].size);
 	if(input==NULL){
 		printf("Error: unknown error in memory.\n");
 		return;
 	}
-	target=(double*)malloc(sizeof(double)*layer[layers_count].size);
+	target=(double*)malloc(sizeof(double)*neuromz->layer[neuromz->layers_count].size);
 	if(target==NULL){
 		printf("Error: unkown error in memory.\n");
 		free(input);
@@ -375,7 +383,7 @@ void doTrain(struct words * w,int count){
 	}
 
 	//getting the input values
-	for(i=0;i<layer[0].size;i++)
+	for(i=0;i<neuromz->layer[0].size;i++)
 	{
 		wt=wt->next;
 		if(!isNum(wt->t)){
@@ -396,7 +404,7 @@ void doTrain(struct words * w,int count){
 	}
 
 	//getting the target values
-	for(i=0;i<layer[layers_count-1].size;i++)
+	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 	{
 		wt=wt->next;
 		if(!isNum(wt->t)){
@@ -413,17 +421,17 @@ void doTrain(struct words * w,int count){
 		addTrainSet(input,target);
 	
 		do{
-			curSet=trnHead;
+			curSet=neuromz->trnHead;
 			while(curSet!=NULL){
 				output=forward(curSet->input);
 				backProp(curSet->output);
 				cost_fn=cost_fx(curSet->output);
 				tr++;
-				steps++;
+				neuromz->steps++;
 				curSet=curSet->next;
 			}
 	
-		}while(cost_fn>conv_value);
+		}while(cost_fn>neuromz->conv_value);
 	}
 	else
 	{
@@ -438,7 +446,7 @@ void doTrain(struct words * w,int count){
 					output=forward(input);
 					backProp(output);
 					tr++;
-					steps++;
+					neuromz->steps++;
 				}
 			}
 			else
@@ -455,7 +463,7 @@ void doTrain(struct words * w,int count){
 
 
 	printf("the Network was trained %u times now.\n",tr);
-	printf("the Network all time trained %lu times.\n",steps);
+	printf("the Network all time trained %lu times.\n",neuromz->steps);
 
 	free(input);
 	free(target);
@@ -469,10 +477,15 @@ void learn_rate(struct words * w, int count){
 	}
 
 	w=w->next;
+    if(neuromz == NULL)
+    {
+        printf("Error: no network opened in memory.\n");
+		return;
+    }
 
 	if(strcmp(w->t,"-p")==0)
 	{
-		printf("\tlearnRate=%g\n",learnRate);
+		printf("\tlearnRate=%g\n",neuromz->learnRate);
 	}
 	else if(isNum(w->t))
 	{
@@ -483,7 +496,7 @@ void learn_rate(struct words * w, int count){
 			return;
 		}
 
-		learnRate=lR;
+		neuromz->learnRate=lR;
 
 	}
 	else
@@ -500,11 +513,16 @@ void convarge(struct words * w, int count){
 		printf("Error: invalid data.\n");
 		return;
 	}
-
+	
+    if(neuromz == NULL)
+    {
+        printf("Error: no network opened in memory.\n");
+		return;
+    }
 	w=w->next;
 	if(strcmp(w->t,"-p")==0)
 	{
-		printf("\tconvarge=%g\n",conv_value);
+		printf("\tconvarge=%g\n",neuromz->conv_value);
 	}
 	else if(isNum(w->t))
 	{
@@ -515,7 +533,7 @@ void convarge(struct words * w, int count){
 			return;
 		}
 
-		conv_value=cv;
+		neuromz->conv_value=cv;
 	}
 	else
 	{
@@ -526,17 +544,24 @@ void convarge(struct words * w, int count){
 void addTrainSet(double *in, double *out){
 	struct trainSet *cur=NULL;
 	int i;
-	if(trnHead==NULL){
-		trnHead=(struct trainSet *)malloc(sizeof(struct trainSet));
-		if(trnHead==NULL)
+    
+    if(neuromz == NULL)
+    {
+        printf("Error: no network opened in memory.\n");
+		return;
+    }
+    
+	if(neuromz->trnHead==NULL){
+		neuromz->trnHead=(struct trainSet *)malloc(sizeof(struct trainSet));
+		if(neuromz->trnHead==NULL)
 		{
 			printf("Error: Unknown error in memory.\n");
 			return;
 		}
-		cur=trnHead;
+		cur=neuromz->trnHead;
 	}
 	else{
-		cur=trnHead;
+		cur=neuromz->trnHead;
 		while(cur->next!=NULL){
 
 			cur=cur->next;
@@ -551,24 +576,28 @@ void addTrainSet(double *in, double *out){
 	}
 
 	cur->next=NULL;
-	cur->input=(double *)malloc(sizeof(double)*layer[0].size);
-	cur->output=(double *)malloc(sizeof(double)*layer[layers_count-1].size);
+	cur->input=(double *)malloc(sizeof(double)*neuromz->layer[0].size);
+	cur->output=(double *)malloc(sizeof(double)*neuromz->layer[neuromz->layers_count-1].size);
 	if(cur->input==NULL || cur->output==NULL){
 		printf("Error: Unkown error in memory.\n");
 		return;
 	}
 
-	for(i=0;i<layer[0].size;i++)
+	for(i=0;i<neuromz->layer[0].size;i++)
 		cur->input[i]=in[i];
-	for(i=0;i<layer[layers_count-1].size;i++)
+	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 		cur->output[i]=out[i];
 
 
 }
 
 void clearTrainSet(){
-	
-	struct trainSet * curSet=trnHead;
+    if(neuromz == NULL)
+    {
+        printf("Error: no network opened in memory.\n");
+		return;
+    }
+	struct trainSet * curSet=neuromz->trnHead;
 	struct trainSet * tmp;
 	while(curSet!=NULL){
 		tmp=curSet;
@@ -577,7 +606,7 @@ void clearTrainSet(){
 		free(tmp->output);
 		free(tmp);
 	}
-	trnHead=NULL;
+	neuromz->trnHead=NULL;
 }
 
 int isNum(char *ch){
@@ -600,26 +629,31 @@ int isNum(char *ch){
 
 void showDet()
 {
-	if(layer==NULL)
+    if(neuromz == NULL)
+    {
+        printf("Error: no network opened in memory.\n");
+		return;
+    }
+	if(neuromz->layer==NULL)//should be deleted
 	{
 		printf("Error: NO neural network opened now.\n");
 		return;
 	}
 
 	puts("Name:");
-	if(filename==NULL)
+	if(neuromz->filename==NULL)
 	{
 		puts("\t#UNTITLED#");
 	}
 	else
 	{
-		printf("\t%s\n",filename);
+		printf("\t%s\n",neuromz->filename);
 	}
 	puts("Layers:");
 	printf("\t1 input layer [%d node(s)]\n\t%d hidden layer(s)\n\t1 output layer [%d node(s)]\n"
-			,layer[0].size,layers_count-2,layer[layers_count-1].size);
+			,neuromz->layer[0].size,neuromz->layers_count-2,neuromz->layer[neuromz->layers_count-1].size);
 	puts("Learn Rate:");
-	printf("\t%g\n",learnRate);
+	printf("\t%g\n",neuromz->learnRate);
 	puts("Convarge value:");
-	printf("\t%g\n",conv_value);
+	printf("\t%g\n",neuromz->conv_value);
 }

@@ -45,6 +45,26 @@ struct fileHead{
 		
 };
 
+//the main data structure for the nueral network
+typedef struct {
+    
+    char * filename;
+    
+    double conv_value;
+    struct layers * layer;
+    uint16 layers_count;
+    
+    unsigned long steps;
+    
+    double * output_val;
+    
+    double learnRate ;//we can change it later by the main function
+    struct trainSet * trnHead;
+
+    
+} NEUROMZ_data;
+
+
 //functions
 int INIT_NETWORK(int *layer_number,int layer_size);//preparing the neural network
 

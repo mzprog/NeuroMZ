@@ -6,17 +6,19 @@
 #include "neuromz.h"
 #include "actFunc.h"
 
-struct trainSet * trnHead=0;
-double *  temp=0;//we should allocate as the bigest layer neurons.
-char * filename;
-double conv_value=0.005;
-struct layers * layer=0;
-uint16 layers_count;
-unsigned long steps=0;
-double * output_val=0;
-double learnRate = 0.1;//we can change it later by the main function
+// struct trainSet * trnHead=0;
+// double *  temp=0;//we should allocate as the bigest layer neurons.
+// char * filename;
+// double conv_value=0.005;
+// struct layers * layer=0;
+// uint16 layers_count;
+// unsigned long steps=0;
+// double * output_val=0;
+// double learnRate = 0.1;//we can change it later by the main function
 
 
+
+NEUROMZ_data * neuromz = NULL;
 
 int INIT_NETWORK(int * layer_number,int layer_size){
 
@@ -28,47 +30,58 @@ int INIT_NETWORK(int * layer_number,int layer_size){
 	for(i=0;i<layer_size;i++)
 		if(layer_number[i]<=0)
 			return -1;
-	layers_count=layer_size;
+        
+    neuromz = (NEUROMZ_data *) calloc(1,sizeof(NEUROMZ_data));
+    if(neuromz == NULL)
+    {
+        return -1;
+    }
+    //set some vars and the rest are NULL
+    neuromz->conv_value = 0.005;
+    neuromz->learnRate = 0.1;
+    
+        
+	neuromz->layers_count=layer_size;
 	// allocate the layers structures
 	//layer= malloc(layer_size* sizeof(struct layers));
-	layer= (struct layers*)calloc(layer_size,sizeof(struct layers));
+	neuromz->layer= (struct layers*)calloc(layer_size,sizeof(struct layers));
 
-	if(layer==NULL)
+	if(neuromz->layer==NULL)
 		return -1;
 	//allocate the neurals for the layers
 	for(i=0;i<layer_size;i++)
 	{
-		layer[i].size=layer_number[i];
-		layer[i].neural=(struct neurals *)calloc(layer[i].size+1,sizeof(struct neurals));//i
-		layer[i].ACT_FX=SIGMOID;//use sigmoid function as default		
-		if(layer[i].neural==NULL)
+		neuromz->layer[i].size=layer_number[i];
+		neuromz->layer[i].neural=(struct neurals *)calloc(neuromz->layer[i].size+1,sizeof(struct neurals));//i
+		neuromz->layer[i].ACT_FX=SIGMOID;//use sigmoid function as default		
+		if(neuromz->layer[i].neural==NULL)
 			return -1;
 		if(i==layer_size-1)
 			break;
 
-		layer[i].weight=(struct matrix**)calloc(layer[i].size,sizeof(struct matrix *));//i
+		neuromz->layer[i].weight=(struct matrix**)calloc(neuromz->layer[i].size,sizeof(struct matrix *));//i
 		
-		if(layer[i].weight==NULL)
+		if(neuromz->layer[i].weight==NULL)
 			return -1;
 		for(j=0;j<layer_number[i];j++)
 		{
-			layer[i].weight[j]=(struct matrix*)calloc(layer_number[i+1],sizeof(struct matrix));//i+1
-			if(layer[i].weight[j]==NULL)
+			neuromz->layer[i].weight[j]=(struct matrix*)calloc(layer_number[i+1],sizeof(struct matrix));//i+1
+			if(neuromz->layer[i].weight[j]==NULL)
 				return -1;
 			for(k=0;k<layer_number[i+1];k++)//give the weights and the bais random values.
 			{
-				layer[i].weight[j][k].weightV= 3.0/(rand()%20+1)-1.5;
+				neuromz->layer[i].weight[j][k].weightV= 3.0/(rand()%20+1)-1.5;
 			}
 		}	
-		layer[i].neural[j].bais=3.0/(rand()%20+1) -1.5;
+		neuromz->layer[i].neural[j].bais=3.0/(rand()%20+1) -1.5;
 	}
 
 
 
 	for(j=0;j<layer_number[i];j++)
-		layer[i].neural[j].bais=3.0/(rand()%20+1)-1.5;
-	output_val=malloc(sizeof(double)*layer[i].size);
-	if(output_val==NULL)
+		neuromz->layer[i].neural[j].bais=3.0/(rand()%20+1)-1.5;
+	neuromz->output_val=malloc(sizeof(double)*neuromz->layer[i].size);
+	if(neuromz->output_val==NULL)
 		return -1;
 
 	return 0;
@@ -79,24 +92,25 @@ double * forward(double * data){
 
 	int i,j,k;
 	double sum;
-	for(i=0;i<layer[0].size;i++)
-		layer[0].neural[i].a=data[i];//we put it in the var a because input doesn't need activation functions
+	for(i=0;i<neuromz->layer[0].size;i++)
+		neuromz->layer[0].neural[i].a=data[i];//we put it in the var a because input doesn't need activation functions
 
-	for(k=0;k<layers_count-1;k++)//this loop to all layers.
-		for(j=0;j<layer[k+1].size;j++)
+	for(k=0;k<neuromz->layers_count-1;k++)//this loop to all layers.
+		for(j=0;j<neuromz->layer[k+1].size;j++)
 		{
 
 			sum=0;
-			for(i=0;i<layer[k].size;i++){
-				sum+=layer[k].neural[i].a*layer[k].weight[i][j].weightV;//the sum here
+			for(i=0;i<neuromz->layer[k].size;i++){
+				sum+=neuromz->layer[k].neural[i].a*neuromz->layer[k].weight[i][j].weightV;//the sum here
 			}
-			sum+=layer[k+1].neural[j].bais;//finaly add the bais
-			layer[k+1].neural[j].x=sum;//then assign it to the x input
-			layer[k+1].neural[j].a=ACTfunc(layer[k+1].neural[j].x,layer[k+1].ACT_FX);//at the end assign the value of activation funtion to var a.
+			sum+=neuromz->layer[k+1].neural[j].bais;//finaly add the bais
+			neuromz->layer[k+1].neural[j].x=sum;//then assign it to the x input
+			neuromz->layer[k+1].neural[j].a=ACTfunc(neuromz->layer[k+1].neural[j].x,
+                                                    neuromz->layer[k+1].ACT_FX);//at the end assign the value of activation funtion to var a.
 		}
-	for(i=0;i<layer[k].size;i++)
-		output_val[i]=layer[k].neural[i].a;
-	return output_val;
+	for(i=0;i<neuromz->layer[k].size;i++)
+		neuromz->output_val[i]=neuromz->layer[k].neural[i].a;
+	return neuromz->output_val;
 
 }
 
@@ -104,9 +118,9 @@ double  cost_fx(double * target_val){
 	double  ret_val,x;
 	int i;
 	ret_val=0;
-	for(i=0;i<layer[layers_count-1].size;i++)
+	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 	{
-		x=(double) target_val[i]-layer[layers_count-1].neural[i].a;
+		x=(double) target_val[i]-neuromz->layer[neuromz->layers_count-1].neural[i].a;
 		ret_val+=x*x;
 	}
 	return (0.5*ret_val);
@@ -118,34 +132,35 @@ void backProp(double * target){
 	int i, j, k,n;//for dimesion of the neurons
 	double delta_k,delta_j;//saving the delta 
 	//find the bais and  weight delta, and correct it for the last layer
-	for(i=0;i<layer[layers_count-1].size;i++){
-		delta_k=(target[i]-layer[layers_count-1].neural[i].a)*ACTderv(layer[layers_count-1].neural[i].x,layer[layers_count-1].ACT_FX);
+	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++){
+		delta_k = (target[i]-neuromz->layer[neuromz->layers_count-1].neural[i].a) * 
+                    ACTderv(neuromz->layer[neuromz->layers_count-1].neural[i].x,neuromz->layer[neuromz->layers_count-1].ACT_FX);
 		
 		//correct the bais
-		layer[layers_count-1].neural[i].bais+= learnRate*delta_k;
+		neuromz->layer[neuromz->layers_count-1].neural[i].bais+= neuromz->learnRate*delta_k;
 //here is temporry value for n=0
-		for(j=0;j<layer[layers_count-2].size;j++){
-			layer[layers_count-2].weight[j][0].weightV+=learnRate*delta_k*layer[layers_count-2].neural[j].a;
-			layer[layers_count-2].weight[j][0].deltaW=delta_k;
+		for(j=0;j<neuromz->layer[neuromz->layers_count-2].size;j++){
+			neuromz->layer[neuromz->layers_count-2].weight[j][0].weightV+=neuromz->learnRate*delta_k*neuromz->layer[neuromz->layers_count-2].neural[j].a;
+			neuromz->layer[neuromz->layers_count-2].weight[j][0].deltaW=delta_k;
 		}
 	}
 	//find bais and weight delta for the rest of the layers
-	for(k=layers_count-1;k>1;k--)//loop for layers
+	for(k=neuromz->layers_count-1;k>1;k--)//loop for layers
 	{
-		for(j=0;j<layer[k-1].size;j++)
+		for(j=0;j<neuromz->layer[k-1].size;j++)
 		{
 			delta_j=0;
-			for(n=0;n<layer[k].size;n++)//here new edition
-				delta_j+=(layer[k-1].weight[j][n].weightV*layer[k-1].weight[j][n].deltaW);
-			delta_j*=ACTderv(layer[k-1].neural[j].x,layer[k-1].ACT_FX);//final gelta j calculation.
+			for(n=0;n<neuromz->layer[k].size;n++)//here new edition
+				delta_j+=(neuromz->layer[k-1].weight[j][n].weightV*neuromz->layer[k-1].weight[j][n].deltaW);
+			delta_j*=ACTderv(neuromz->layer[k-1].neural[j].x,neuromz->layer[k-1].ACT_FX);//final gelta j calculation.
 			
 			//correct the bais
-			layer[k-1].neural[j].bais+=(learnRate * delta_j);
+			neuromz->layer[k-1].neural[j].bais+=(neuromz->learnRate * delta_j);
 			//correct the weights
-			for(i=0;i<layer[k-2].size;i++)
+			for(i=0;i<neuromz->layer[k-2].size;i++)
 			{
-				layer[k-2].weight[i][j].weightV+= (learnRate * delta_j *layer[k-2].neural[i].a );
-				layer[k-2].weight[i][j].deltaW=delta_j;
+				neuromz->layer[k-2].weight[i][j].weightV+= (neuromz->learnRate * delta_j *neuromz->layer[k-2].neural[i].a );
+				neuromz->layer[k-2].weight[i][j].deltaW=delta_j;
 			}
 		}
 	}
@@ -168,10 +183,17 @@ int saveNet(char * fileName){
 	struct fileHead head;
 	struct trainSet * train_set;
 	FILE * fptr;
-	head.layers_count=layers_count;
-	head.trainNum=steps;
-	head.learnRate=learnRate;
-	head.conv=conv_value;
+    
+    if(neuromz == NULL)
+    {
+        printf("Error: no network opened in memory.\n");
+		return -1;
+    }
+    
+	head.layers_count=neuromz->layers_count;
+	head.trainNum=neuromz->steps;
+	head.learnRate=neuromz->learnRate;
+	head.conv=neuromz->conv_value;
 	strcpy(head.version,"1.1");
 
 	fptr=fopen(fileName,"w");
@@ -181,23 +203,23 @@ int saveNet(char * fileName){
 	fwrite( &head,sizeof(head),1,fptr);
 
 	//preparing for layers element array
-	temp=(int *) malloc(layers_count);
+	temp=(int *) malloc(neuromz->layers_count);
 	if (temp==NULL){
 		fclose(fptr);
 		return -1;
 	}
-	for(i=0;i<layers_count;i++)
-		temp[i]=layer[i].size;
-	fwrite(temp,sizeof(int),layers_count,fptr);
+	for(i=0;i<neuromz->layers_count;i++)
+		temp[i]=neuromz->layer[i].size;
+	fwrite(temp,sizeof(int),neuromz->layers_count,fptr);
 	
 	//prepare the activation function element array
-	for(i=0;i<layers_count;i++)
-		temp[i]=layer[i].ACT_FX;
-	fwrite(temp,sizeof(int),layers_count,fptr);
+	for(i=0;i<neuromz->layers_count;i++)
+		temp[i]=neuromz->layer[i].ACT_FX;
+	fwrite(temp,sizeof(int),neuromz->layers_count,fptr);
 
 	//now write the weight of the network
 	//find the max
-	for(i=0;i<layers_count;i++)
+	for(i=0;i<neuromz->layers_count;i++)
 		if(temp[i]>max)
 			max=temp[i];
 
@@ -210,30 +232,30 @@ int saveNet(char * fileName){
 	}
 
 	//prepare the array and write to the file
-	for(k=0;k<layers_count-1;k++){
-		for(j=0;j<layer[k].size;j++){
-			for(i=0;i<layer[k+1].size;i++)
+	for(k=0;k<neuromz->layers_count-1;k++){
+		for(j=0;j<neuromz->layer[k].size;j++){
+			for(i=0;i<neuromz->layer[k+1].size;i++)
 			{
 				//get the 1D array
-				tempW[i]=layer[k].weight[j][i].weightV;
+				tempW[i]=neuromz->layer[k].weight[j][i].weightV;
 			}
-			fwrite(tempW,sizeof(double),layer[k+1].size,fptr);
+			fwrite(tempW,sizeof(double),neuromz->layer[k+1].size,fptr);
 		}
 	}
 	//now write the bais
-	for(k=1;k<layers_count;k++)
+	for(k=1;k<neuromz->layers_count;k++)
 	{
-		for(i=0;i<layer[k].size;i++)
-			tempW[i]=layer[k].neural[i].bais;
-		fwrite(tempW,sizeof(double),layer[k].size,fptr);
+		for(i=0;i<neuromz->layer[k].size;i++)
+			tempW[i]=neuromz->layer[k].neural[i].bais;
+		fwrite(tempW,sizeof(double),neuromz->layer[k].size,fptr);
 	}
 	//add the train set to the file
-	train_set=trnHead;
+	train_set = neuromz->trnHead;
 
 	while(train_set)
 	{
-		fwrite(train_set->input,sizeof(double),layer[0].size,fptr);
-		fwrite(train_set->output,sizeof(double),layer[layers_count-1].size,fptr);
+		fwrite(train_set->input,sizeof(double),neuromz->layer[0].size,fptr);
+		fwrite(train_set->output,sizeof(double),neuromz->layer[neuromz->layers_count-1].size,fptr);
 		train_set=train_set->next;
 	}
 
@@ -254,25 +276,30 @@ int loadNet(char * fileName){
 	double * tempD=0;
 
 	FILE * fptr;
-
+    neuromz = (NEUROMZ_data *) calloc(1,sizeof(NEUROMZ_data));
+    if(neuromz == NULL)
+    {
+        printf("Error: Unable to open in memory.\n");
+		return -1;
+    }
 	fptr = fopen(fileName,"r");
 	if(fptr==NULL)
 		return -1;
 	//get the head data
 	fread(&head,sizeof(head),1,fptr);
-	layers_count=head.layers_count;
-	steps=head.trainNum;
-	learnRate=head.learnRate;
-	conv_value=head.conv;
+	neuromz->layers_count=head.layers_count;
+	neuromz->steps=head.trainNum;
+	neuromz->learnRate=head.learnRate;
+	neuromz->conv_value=head.conv;
 
 	//get the layer neurons and init network
-	tempI=(int *)malloc(sizeof(int)*layers_count);
+	tempI=(int *)malloc(sizeof(int)*neuromz->layers_count);
 	if(tempI==NULL){
 		fclose(fptr);
 		return -1;
 	}
-	fread(tempI,sizeof(int),layers_count,fptr);
-	if(INIT_NETWORK(tempI,layers_count)<0){
+	fread(tempI,sizeof(int),neuromz->layers_count,fptr);
+	if(INIT_NETWORK(tempI,neuromz->layers_count)<0){
 		free(tempI);
 		fclose(fptr);
 		return -1;
@@ -280,20 +307,20 @@ int loadNet(char * fileName){
 	//get the activation function flags
 	if(strcmp(head.version,"1.1")==0)
 	{
-		fread(tempI,sizeof(int),layers_count,fptr);
-		for(i=0;i<layers_count;i++)
-			layer[i].ACT_FX=tempI[i];
+		fread(tempI,sizeof(int),neuromz->layers_count,fptr);
+		for(i=0;i<neuromz->layers_count;i++)
+			neuromz->layer[i].ACT_FX=tempI[i];
 	}
 	else if(strcmp(head.version,"1.0")==0)
 	{
 		//as defualt for v 1.0 that the default activation function is sigmoid
-		for(i=0;i<layers_count;i++)
-			layer[i].ACT_FX=SIGMOID;
+		for(i=0;i<neuromz->layers_count;i++)
+			neuromz->layer[i].ACT_FX=SIGMOID;
 	}
 
 	//getting the weights
 	//find the max
-	for(i=0;i<layers_count;i++)
+	for(i=0;i<neuromz->layers_count;i++)
 		if(tempI[i]>max)
 			max=tempI[i];
 	tempD=(double *) malloc(sizeof(double)*max);
@@ -303,61 +330,61 @@ int loadNet(char * fileName){
 		return -1;
 	}
 	//clone the weights
-	for(k=0;k<layers_count-1;k++){
-		for(j=0;j<layer[k].size;j++){
-			fread(tempD,sizeof(double),layer[k+1].size,fptr);
-			for(i=0;i<layer[k+1].size;i++)
+	for(k=0;k<neuromz->layers_count-1;k++){
+		for(j=0;j<neuromz->layer[k].size;j++){
+			fread(tempD,sizeof(double),neuromz->layer[k+1].size,fptr);
+			for(i=0;i<neuromz->layer[k+1].size;i++)
 			{
-				layer[k].weight[j][i].weightV=tempD[i];
+				neuromz->layer[k].weight[j][i].weightV=tempD[i];
 			}
 		}
 	}
 	//clone the bais
-	for(k=1;k<layers_count;k++){
-		fread(tempD,sizeof(double),layer[k].size,fptr);
-		for(j=0;j<layer[k].size;j++)
-			layer[k].neural[j].bais=tempD[j];
+	for(k=1;k<neuromz->layers_count;k++){
+		fread(tempD,sizeof(double),neuromz->layer[k].size,fptr);
+		for(j=0;j<neuromz->layer[k].size;j++)
+			neuromz->layer[k].neural[j].bais=tempD[j];
 	}
 	//clone the train set
-	if(fread(tempD,sizeof(double),layer[0].size,fptr)!=0)
+	if(fread(tempD,sizeof(double),neuromz->layer[0].size,fptr)!=0)
 	{
-		trnHead=(struct trainSet *) malloc(sizeof(struct trainSet));
-		if(trnHead==NULL)
+		neuromz->trnHead=(struct trainSet *) malloc(sizeof(struct trainSet));
+		if(neuromz->trnHead==NULL)
 		{
 			free(tempD);
 			free(tempI);
 			fclose(fptr);
 			return -1;
 		}
-		trnHead->input=(double *) malloc(sizeof(double)*layer[0].size);
-		if(trnHead->input==NULL)
+		neuromz->trnHead->input=(double *) malloc(sizeof(double)*neuromz->layer[0].size);
+		if(neuromz->trnHead->input==NULL)
 		{
-			free(trnHead);
-			trnHead=NULL;
+			free(neuromz->trnHead);
+			neuromz->trnHead=NULL;
 			free(tempD);
 			free(tempI);
 			fclose(fptr);
 			return -1;
 		}
-		trnHead->output=(double *) malloc(sizeof(double)*layer[layers_count].size);
-		if(trnHead->output==NULL)
+		neuromz->trnHead->output=(double *) malloc(sizeof(double)*neuromz->layer[neuromz->layers_count].size);
+		if(neuromz->trnHead->output==NULL)
 		{
-			free(trnHead->input);
-			free(trnHead);
-			trnHead=NULL;
+			free(neuromz->trnHead->input);
+			free(neuromz->trnHead);
+			neuromz->trnHead=NULL;
 			free(tempD);
 			free(tempI);
 			fclose(fptr);
 			return -1;
 		}
-		for(i=0;i<layer[0].size;i++)
-			trnHead->input[i]=tempD[i];
-		fread(tempD,sizeof(double),layer[layers_count-1].size,fptr);
-		for(i=0;i<layer[layers_count-1].size;i++)
-			trnHead->output[i]=tempD[i];
-		trnHead->next=NULL;
-		train_set=trnHead;
-		while(fread(tempD,sizeof(double),layer[0].size,fptr)!=0)
+		for(i=0;i<neuromz->layer[0].size;i++)
+			neuromz->trnHead->input[i]=tempD[i];
+		fread(tempD,sizeof(double),neuromz->layer[neuromz->layers_count-1].size,fptr);
+		for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
+			neuromz->trnHead->output[i]=tempD[i];
+		neuromz->trnHead->next=NULL;
+		train_set=neuromz->trnHead;
+		while(fread(tempD,sizeof(double),neuromz->layer[0].size,fptr)!=0)
 		{
 			train_set->next=(struct trainSet *) malloc(sizeof(struct trainSet));
 			if(train_set->next==NULL)
@@ -370,7 +397,7 @@ int loadNet(char * fileName){
 			}
 			train_set=train_set->next;
 			train_set->next=NULL;
-			train_set->input=(double *) malloc(sizeof(double)*layer[0].size);
+			train_set->input=(double *) malloc(sizeof(double)*neuromz->layer[0].size);
 			if(train_set->input==NULL)
 			{
 				clearTrainSet();
@@ -379,7 +406,7 @@ int loadNet(char * fileName){
 				fclose(fptr);
 				return -1;
 			}
-			train_set->output=(double * ) malloc(sizeof(double)*layer[layers_count-1].size);
+			train_set->output=(double * ) malloc(sizeof(double)*neuromz->layer[neuromz->layers_count-1].size);
 			if(train_set->output==NULL)
 			{
 				clearTrainSet();
@@ -388,10 +415,10 @@ int loadNet(char * fileName){
 				fclose(fptr);
 				return -1;
 			}
-			for(i=0;i<layer[0].size;i++)
+			for(i=0;i<neuromz->layer[0].size;i++)
 				train_set->input[i]=tempD[i];
-			fread(tempD,sizeof(double),layer[layers_count-1].size,fptr);
-			for(i=0;i<layer[layers_count-1].size;i++)
+			fread(tempD,sizeof(double),neuromz->layer[neuromz->layers_count-1].size,fptr);
+			for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 				train_set->output[i]=tempD[i];
 		}
 
@@ -406,25 +433,32 @@ int loadNet(char * fileName){
 void freeNet(){
 
 	int j,k;
-	for(k=0;k<layers_count;k++){
+	for(k=0;k<neuromz->layers_count;k++){
 		//free the weight matrix colomn
-		if(layer[k].weight!=NULL){
-			for(j=0;j<layer[k].size;j++)
-				free(layer[k].weight[j]);
+		if(neuromz->layer[k].weight!=NULL){
+			for(j=0;j<neuromz->layer[k].size;j++)
+				free(neuromz->layer[k].weight[j]);
 		}
 		//free the raw
-		free(layer[k].weight);
+		free(neuromz->layer[k].weight);
 		//free the neural
-		free(layer[k].neural);
+		free(neuromz->layer[k].neural);
 
 	}
 
 	//free the layers
-	free(layer);
-	layer=NULL;
+	free(neuromz->layer);
+	neuromz->layer=NULL;
 	//free the output value array
-	free(output_val);
-	output_val=NULL;
+	free(neuromz->output_val);
+	neuromz->output_val=NULL;
 
-
+    if(neuromz->filename != NULL)
+    {
+        free(neuromz->filename);
+        neuromz->filename =NULL;
+    }
+    
+    free(neuromz);
+    neuromz = NULL;
 }

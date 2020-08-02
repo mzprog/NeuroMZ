@@ -8,9 +8,11 @@
 
 extern char QUIT;//for quit the command function. 
 
-extern char * filename;
-extern struct layers * layer;
-extern uint16 layers_count;
+// extern char * filename;
+// extern struct layers * layer;
+// extern uint16 layers_count;
+
+extern NEUROMZ_data *neuromz;
 
 int main(int argc,char * argv[]){
 
@@ -26,6 +28,7 @@ int main(int argc,char * argv[]){
 void command(){
 	char line[256];
 	printf("NeuroMZ 2017\nTo more help type \"-h\" or \"help\".\n");
+
 	while(!QUIT){
 		//get starter.
 		getStarter();
@@ -82,19 +85,19 @@ void testArg(int argc, char *argv[]){
 				ERROR=1;
 				break;
 			}
-			if(filename!=NULL)
+			if(neuromz->filename!=NULL)
 			{
-				free(filename);
-				filename=NULL;
+				free(neuromz->filename);
+				neuromz->filename=NULL;
 			}
-			filename=(char *) malloc(sizeof(char) * (strlen(argv[i])+1));
-			strcpy(filename,argv[++i]);
+			neuromz->filename=(char *) malloc(sizeof(char) * (strlen(argv[i])+1));
+			strcpy(neuromz->filename,argv[++i]);
 
 			SAVE=1;
 		}
 		else if(strcmp(argv[i],"-test")==0)
 		{
-			if(layer==NULL)
+			if(neuromz->layer==NULL)
 			{
 				printf("Error: Should open neural network first.\n");
 				ERROR=1;
@@ -106,7 +109,7 @@ void testArg(int argc, char *argv[]){
 			{
 				newNode(argv[j++],word);
 			}
-			if(layer[0].size!=j-i)
+			if(neuromz->layer[0].size!=j-i)
 			{
 				printf("Error: Invalid input layer count.\n");
 				ERROR=1;
@@ -118,7 +121,7 @@ void testArg(int argc, char *argv[]){
 		}
 		else if(strcmp(argv[i],"-train")==0)
 		{
-			if(layer==NULL)
+			if(neuromz->layer==NULL)
 			{
 				printf("Error: Should open neural network first.\n");
 				ERROR=1;
@@ -131,7 +134,7 @@ void testArg(int argc, char *argv[]){
 				newNode(argv[j++],word);
 			}
 		
-			if(layer[0].size!=j-i)
+			if(neuromz->layer[0].size!=j-i)
 			{
 				printf("Error: Invalid input layer count.\n");
 				ERROR=1;
@@ -158,7 +161,7 @@ void testArg(int argc, char *argv[]){
 			{
 				newNode(argv[j++],word);
 			}
-			if(layer[layers_count-1].size!=j-i)
+			if(neuromz->layer[neuromz->layers_count-1].size!=j-i)
 			{
 				printf("Error: Invalid output layer count.\n");
 				ERROR=1;
@@ -167,11 +170,11 @@ void testArg(int argc, char *argv[]){
 			if(j<argc && argv[j][0]=='r' && isNum((argv[j]+1)))
 			{
 				newNode(argv[j++],word);
-				doTrain(word,3+layer[0].size+layer[layers_count-1].size);
+				doTrain(word,3+neuromz->layer[0].size+neuromz->layer[neuromz->layers_count-1].size);
 			}
 			else
 			{
-				doTrain(word,2+layer[0].size+layer[layers_count-1].size);
+				doTrain(word,2+neuromz->layer[0].size+neuromz->layer[neuromz->layers_count-1].size);
 			}
 			clearWords(word);
 			i=j-1;
@@ -179,7 +182,7 @@ void testArg(int argc, char *argv[]){
 		}
 		else if(strcmp(argv[i],"-lr")==0)
 		{
-			if(layer==NULL)
+			if(neuromz->layer==NULL)
 			{
 				printf("Error: should open neural network first.\n");
 				ERROR=1;
@@ -207,7 +210,7 @@ void testArg(int argc, char *argv[]){
 		}
 		else if(strcmp(argv[i],"-conv")==0)
 		{
-			if(layer==NULL)
+			if(neuromz->layer==NULL)
 			{
 				printf("Error: should open neural network first.\n");
 				ERROR=1;
@@ -263,7 +266,7 @@ void testArg(int argc, char *argv[]){
 		}
 		else if(strcmp(argv[i],"-rmset")==0)
 		{
-			if(layer==NULL)
+			if(neuromz->layer==NULL)
 			{
 				printf("Error: choose a neural network to clear its train set.\n");
 				ERROR=1;
@@ -287,7 +290,7 @@ void testArg(int argc, char *argv[]){
 		}
 		else
 		{
-			if(filename==NULL)
+			if(neuromz->filename==NULL)
 			{
 				printf("Error: Can\'t save without file name.\n");
 			}
@@ -301,13 +304,13 @@ void testArg(int argc, char *argv[]){
 	clearWords(word);
 	//clear last word list 
 	free(word);
-	if(layer!=NULL)
+	if(neuromz->layer!=NULL)
 	{
 		freeNet();
 		clearTrainSet();
-		if(filename!=NULL){
-			free(filename);
-			filename=NULL;
+		if(neuromz->filename!=NULL){
+			free(neuromz->filename);
+			neuromz->filename=NULL;
 		}
 	//some fix the filename args or malloc to free it
 	}
@@ -325,13 +328,16 @@ void getCMD(char * text, int limit){
 
 void getStarter(){
 
-	if(filename==0)
-		if(layer==0)
-			printf("NO-NETWORK");
-		else
-			printf("UNTITLED");
+	if(neuromz == NULL)
+    {
+        printf("NO-NETWORK");
+    }
+    else if(neuromz->filename == NULL)
+    {
+        printf("UNTITLED");
+    }
 	else
-		printf("%s",filename);
+		printf("%s",neuromz->filename);
 
 	printf(">>>");
 }
