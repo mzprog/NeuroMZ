@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+/*
 double ACTfunc(double x, int flag)
 {
 	switch(flag)
@@ -67,6 +67,73 @@ double ACTderv(double x, int flag)
                         return 0;
         }
 }
+*/
+
+
+void * ACTf_Ptr(int flag)
+{
+    switch(flag)
+    {
+        case X :
+                return ACTx;
+        case SIGMOID :
+                return ACTsigmoid;
+        case TANH :
+                return ACTtanh;
+        case ARCTAN :
+                return ACTarctan;
+        case SOFTSIGN :
+                return ACTsoftsign;
+        case RELU :
+                return ACTrelu;
+        case LRELU :
+                return ACTlrelu;
+        case SOFTPLUS :
+                return ACTsoftplus;
+        case SINUSOID :
+                return ACTsinusoid;
+        case SINC :
+                return ACTsinc;
+        case GAUSSIAN :
+                return ACTgaussian;
+        default :
+                printf("Error: no activation function determined.\n");
+                return NULL;
+    }
+}
+
+void * ACTd_Ptr(int flag)
+{
+    switch(flag)
+    {
+        case X :
+                return ACTxDerv;
+        case SIGMOID :
+                return ACTsigmoidDerv;
+        case TANH :
+                return ACTtanhDerv;
+        case ARCTAN :
+                return ACTarctanDerv;
+        case SOFTSIGN :
+                return ACTsoftsignDerv;
+        case RELU :
+                return ACTreluDerv;
+        case LRELU :
+                return ACTlreluDerv;
+        case SOFTPLUS :
+                return ACTsoftplusDerv;
+        case SINUSOID :
+                return ACTsinusoidDerv;
+        case SINC :
+                return ACTsincDerv;
+        case GAUSSIAN :
+                return ACTgaussianDerv;
+        default :
+                printf("Error: no activation function determined.\n");
+                return NULL;
+    }
+}
+
 
 double ACTx(double x)
 {

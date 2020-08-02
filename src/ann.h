@@ -23,8 +23,10 @@ struct layers{
 	struct neurals * neural;//pointer to array of neural for a single layer
 	uint16 size;
 	struct matrix ** weight;//the weight's matrix for this layer and the next one
+	
 	uint16 ACT_FX;
-
+    double (* actf)(double);// the activation function
+    double (* actd)(double);// the activation function deravitive
 };
 //define the train set
 
@@ -66,7 +68,7 @@ typedef struct {
 
 
 //functions
-int INIT_NETWORK(int *layer_number,int layer_size);//preparing the neural network
+int INIT_NETWORK(int * layer_number,uint16 *actf,int layer_size);//preparing the neural network
 
 double * forward(double * data);//entring an array of double and the result is the array of the output
 

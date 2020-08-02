@@ -20,7 +20,7 @@
 
 NEUROMZ_data * neuromz = NULL;
 
-int INIT_NETWORK(int * layer_number,int layer_size){
+int INIT_NETWORK(int * layer_number,uint16 *actf,int layer_size){
 
 	int i,j,k;
 
@@ -105,8 +105,10 @@ double * forward(double * data){
 			}
 			sum+=neuromz->layer[k+1].neural[j].bais;//finaly add the bais
 			neuromz->layer[k+1].neural[j].x=sum;//then assign it to the x input
-			neuromz->layer[k+1].neural[j].a=ACTfunc(neuromz->layer[k+1].neural[j].x,
-                                                    neuromz->layer[k+1].ACT_FX);//at the end assign the value of activation funtion to var a.
+			neuromz->layer[k+1].neural[j].a = neuromz->layer[k+1].actf(neuromz->layer[k+1].neural[j].x);
+			
+			//ACTfunc(neuromz->layer[k+1].neural[j].x,
+              //                                      neuromz->layer[k+1].ACT_FX);//at the end assign the value of activation funtion to var a.
 		}
 	for(i=0;i<neuromz->layer[k].size;i++)
 		neuromz->output_val[i]=neuromz->layer[k].neural[i].a;
@@ -134,7 +136,8 @@ void backProp(double * target){
 	//find the bais and  weight delta, and correct it for the last layer
 	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++){
 		delta_k = (target[i]-neuromz->layer[neuromz->layers_count-1].neural[i].a) * 
-                    ACTderv(neuromz->layer[neuromz->layers_count-1].neural[i].x,neuromz->layer[neuromz->layers_count-1].ACT_FX);
+                    neuromz->layer[neuromz->layers_count-1].actd(neuromz->layer[neuromz->layers_count-1].neural[i].x);
+                    //ACTderv(neuromz->layer[neuromz->layers_count-1].neural[i].x,neuromz->layer[neuromz->layers_count-1].ACT_FX);
 		
 		//correct the bais
 		neuromz->layer[neuromz->layers_count-1].neural[i].bais+= neuromz->learnRate*delta_k;
@@ -152,8 +155,8 @@ void backProp(double * target){
 			delta_j=0;
 			for(n=0;n<neuromz->layer[k].size;n++)//here new edition
 				delta_j+=(neuromz->layer[k-1].weight[j][n].weightV*neuromz->layer[k-1].weight[j][n].deltaW);
-			delta_j*=ACTderv(neuromz->layer[k-1].neural[j].x,neuromz->layer[k-1].ACT_FX);//final gelta j calculation.
-			
+			//delta_j*=ACTderv(neuromz->layer[k-1].neural[j].x,neuromz->layer[k-1].ACT_FX);//final gelta j calculation.
+			delta_j *= neuromz->layer[k-1].actd(neuromz->layer[k-1].neural[j].x);
 			//correct the bais
 			neuromz->layer[k-1].neural[j].bais+=(neuromz->learnRate * delta_j);
 			//correct the weights
@@ -299,7 +302,7 @@ int loadNet(char * fileName){
 		return -1;
 	}
 	fread(tempI,sizeof(int),neuromz->layers_count,fptr);
-	if(INIT_NETWORK(tempI,neuromz->layers_count)<0){
+	if(INIT_NETWORK(tempI, NULL, neuromz->layers_count)<0){
 		free(tempI);
 		fclose(fptr);
 		return -1;
@@ -310,12 +313,18 @@ int loadNet(char * fileName){
 		fread(tempI,sizeof(int),neuromz->layers_count,fptr);
 		for(i=0;i<neuromz->layers_count;i++)
 			neuromz->layer[i].ACT_FX=tempI[i];
+            neuromz->layer[i].actd = ACTd_Ptr(tempI[i]);
+            neuromz->layer[i].actf = ACTf_Ptr(tempI[i]);
 	}
 	else if(strcmp(head.version,"1.0")==0)
 	{
 		//as defualt for v 1.0 that the default activation function is sigmoid
 		for(i=0;i<neuromz->layers_count;i++)
+        {
 			neuromz->layer[i].ACT_FX=SIGMOID;
+            neuromz->layer[i].actd = ACTd_Ptr(SIGMOID);
+            neuromz->layer[i].actf = ACTf_Ptr(SIGMOID);
+        }
 	}
 
 	//getting the weights

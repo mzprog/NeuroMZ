@@ -292,7 +292,7 @@ int createNet(struct words * w,int count){
 		}
 	}
 	//initialize the network
-	if(INIT_NETWORK(l,count-1)<0){
+	if(INIT_NETWORK(l,NULL,count-1)<0){
 
 		printf("Error: can\'t initialize the Neural Network.\n");
 		free(l);
