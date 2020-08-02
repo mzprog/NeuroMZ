@@ -4,8 +4,9 @@ CFLAGS	:= -Wall -Werror
 
 
 RM = rm -f   # rm command
+PROJECT_NAME = neuromz
 TARGET_BIN = neuromz.out  # target lib
-
+BIN_LOC = /usr/local
 
 SRCS = src/neuromz.c src/main.c src/ann.c src/actFunc.c 
 
@@ -22,6 +23,10 @@ $(TARGET_BIN): $(OBJS)
 $(OBJS):%.o:%.c
 	$(CC) $(CFLAGS) -c $< -o $@ ${LFLAGS}
 
+install: ${TARGET_BIN}
+	cp ${TARGET_BIN} ${PROJECT_NAME}
+	install -m 0755 $(PROJECT_NAME) $(BIN_LOC)/bin
+	rm $(PROJECT_NAME)
 
 
 

@@ -20,7 +20,6 @@ if you are an Ubuntu user:
 <br>
 otherwise open terminal:
 
-    ./configure
     make
     make install
 
