@@ -104,7 +104,7 @@ double ACTarctan(double x)
 
 double ACTarctanDerv(double x)
 {
-	1.0/(x*x+1);
+	return 1.0/(x*x+1);
 }
 
 double ACTsoftsign(double x)

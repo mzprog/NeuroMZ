@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "main.h"
 #include "ann.h"
 #include "neuromz.h"
-#include "config.h"
 
 char QUIT=0;//for quit the command function. 
 
@@ -16,6 +16,7 @@ extern uint16 layers_count;
 extern unsigned long steps;
 extern double * output_val;
 extern double learnRate;//we can change it later by the main function
+
 
 
 void clearWords(struct words *w){

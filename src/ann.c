@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "neuromz.h"
 #include "actFunc.h"
 
 struct trainSet * trnHead=0;
@@ -136,7 +137,7 @@ void backProp(double * target){
 			delta_j=0;
 			for(n=0;n<layer[k].size;n++)//here new edition
 				delta_j+=(layer[k-1].weight[j][n].weightV*layer[k-1].weight[j][n].deltaW);
-			delta_j*=ACTderv(layer[k-1].neural[j].x,layer[k=1].ACT_FX);//final gelta j calculation.
+			delta_j*=ACTderv(layer[k-1].neural[j].x,layer[k-1].ACT_FX);//final gelta j calculation.
 			
 			//correct the bais
 			layer[k-1].neural[j].bais+=(learnRate * delta_j);
@@ -404,7 +405,7 @@ int loadNet(char * fileName){
 
 void freeNet(){
 
-	int i,j,k;
+	int j,k;
 	for(k=0;k<layers_count;k++){
 		//free the weight matrix colomn
 		if(layer[k].weight!=NULL){

@@ -12,6 +12,10 @@
 *.map
 *.exp
 
+# project files
+.kdev4/
+NeuroMZ.kdev4
+
 # Precompiled Headers
 *.gch
 *.pch
