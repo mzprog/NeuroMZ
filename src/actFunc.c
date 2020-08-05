@@ -2,6 +2,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 /*
 double ACTfunc(double x, int flag)
 {
@@ -131,6 +133,65 @@ void * ACTd_Ptr(int flag)
         default :
                 printf("Error: no activation function determined.\n");
                 return NULL;
+    }
+}
+
+
+/*
+ * This function is wrote as `short` instead of
+ * `unsigned short`
+ * to allow us to return -1 when we found
+ * an error
+ */
+short getActFlag(char *name)
+{
+    if(strcmp(name,"x") == 0)
+    {
+        return X;
+    }
+    else if(strcmp(name,"sigmoid") == 0)
+    {
+        return SIGMOID;
+    }
+    else if(strcmp(name,"tanh") == 0)
+    {
+        return TANH;
+    }
+    else if(strcmp(name,"arctan") == 0)
+    {
+        return ARCTAN;
+    }
+    else if(strcmp(name,"softsign") == 0)
+    {
+        return SOFTSIGN;
+    }
+    else if(strcmp(name,"relu") == 0)
+    {
+        return RELU;
+    }
+    else if(strcmp(name,"lrelu") == 0)
+    {
+        return LRELU;
+    }
+    else if(strcmp(name,"softplus") == 0)
+    {
+        return SOFTPLUS;
+    }
+    else if(strcmp(name,"sinusoid") == 0)
+    {
+        return SINUSOID;
+    }
+    else if(strcmp(name,"sinc") == 0)
+    {
+        return SINC;
+    }
+    else if(strcmp(name,"gaussian") == 0)
+    {
+        return GAUSSIAN;
+    }
+    else
+    {
+        return -1;
     }
 }
 

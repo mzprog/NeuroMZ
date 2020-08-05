@@ -13,11 +13,12 @@
 #define SINC 		9
 #define GAUSSIAN 	10
 
-// double ACTfunc(double x, int flag);
-// double ACTderv(double x, int flag);
+
+
 
 void * ACTf_Ptr(int flag);
 void * ACTd_Ptr(int flag);
+short getActFlag(char *name);
 
 double ACTx(double x);
 double ACTxDerv(double x);

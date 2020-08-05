@@ -4,18 +4,10 @@
 #include "main.h"
 #include "ann.h"
 #include "neuromz.h"
+#include "actFunc.h"
 
 char QUIT=0;//for quit the command function. 
 
-// extern struct trainSet * trnHead;
-// extern double *  temp;//we should allocate as the bigest layer neurons.
-// extern char * filename;
-// extern double conv_value;
-// extern struct layers * layer;
-// extern uint16 layers_count;
-// extern unsigned long steps;
-// extern double * output_val;
-// extern double learnRate;//we can change it later by the main function
 
 extern NEUROMZ_data * neuromz;
 
@@ -261,38 +253,300 @@ void loadFile(struct words * w ,int count){
 
 }
 
+int insWordBefore(struct words *wd, char *ws)
+{
+    struct words *t, *t2;
+    
+    t = (struct words *) malloc(sizeof(struct words));
+    if(t == NULL)
+    {
+        return 0;
+    }
+    t2 = wd->prv;
+    t2->next = t;
+                    
+    t->prv = t2;
+    t->next = wd;
+    wd->prv = t;
+    
+    strcpy(t->t,ws);
+   
+    return 1;
+}
+
+struct words *deleteWord(struct words *w)
+{
+    struct words *t, *t2;
+    
+    t = w->prv;
+    t2 = w->next;
+    
+    t->next = t2;
+    if(t2 != NULL)
+    {
+        t2->prv = t;
+    }
+    free(w);
+    return t2;
+}
+
+void moveStringLower(char *str,int len)
+{
+    int i=0;
+    while(len<strlen(str))
+    {
+        str[i++]=str[len++];
+    }
+    str[i]=0;//the null terminator
+}
+
+int isDigit(char n)
+{
+    return (n >= '0' && n <= '9');
+}
+
+int isAlphabet(char n)
+{
+    return (n >= 'a' && n <= 'z') || (n >= 'A' && n <= 'Z');
+}
+
+int newNetWords(struct words * w)
+{
+    int opened =0;
+    int l=0;
+    struct words *cur;
+    int i;
+    char buf[32];
+    enum WordType{noType,colon,openBracket,closeBracket,number,functionName};
+    enum WordType type = noType;
+
+    char *act_tmp;
+    cur = w->next;//skip the command word
+    while(cur)
+    {
+        if(cur->t[0]==':')
+        {
+            if(type == noType)
+            {
+                printf("Error: can\'t use `:` before layer.\n");
+                return -1;
+            }
+            else if((type == number && !opened )|| type == closeBracket)
+            {
+                type = colon;
+                
+                if(strlen(cur->t)>1)
+                {
+                    if(insWordBefore(cur,":") == 0)
+                        return -1;                    
+                    moveStringLower(cur->t,1);
+                }
+                else
+                {
+                    cur = cur->next;
+                }
+            }
+            else
+            {
+                printf("Error: Bad Syntax\n");
+                return -1;
+            }
+        }
+        else if(isDigit(cur->t[0]))
+        {
+            if(type == colon)
+            {
+                printf("Error: can\'t use layer after `:`.\n");
+                return -1;
+            }
+            type = number;
+            
+            for (i=0;i<strlen(cur->t);i++)
+            {
+                if(!isDigit(cur->t[i]))
+                    break;
+            }
+            if(i != strlen(cur->t))
+            {
+               
+                strncpy(buf,cur->t,i);
+                buf[i] = 0;
+                
+                if(insWordBefore(cur,buf) == 0)
+                    return -1;
+                moveStringLower(cur->t,i);
+            }
+            else
+            {
+                cur = cur->next;
+            }
+            l++;//count found numbers
+        }
+        else if(cur->t[0]=='[')
+        {
+            
+            if(type == colon)
+            {
+                printf("Error: can\'t open bracket after `:`.\n");
+                return -1;
+            }
+            if(type == openBracket)
+            {
+                printf("Error: can\'t open another bracket.\n");
+                return -1;
+            }
+            type = openBracket;
+            opened = 1;
+            if(strlen(cur->t)>1)
+            {
+
+                if(insWordBefore(cur,"[") == 0)
+                    return -1;
+                moveStringLower(cur->t,1);
+            }
+            else
+            {
+                cur = cur->next;
+            }
+            
+        }
+        else if(cur->t[0]==']')
+        {
+            if(!opened)
+            {
+                printf("Error: can\'t close bracket without opening.\n");
+                return -1;
+            }
+            type = closeBracket;
+            opened = 0;
+            if(strlen(cur->t)>1)
+            {
+                if(insWordBefore(cur,"]") == 0)
+                    return -1;
+                moveStringLower(cur->t,1);
+            }
+            else
+            {
+                cur = cur->next;
+            }
+        }
+         else if(isAlphabet(cur->t[0]))
+        {
+            if(type != colon)
+            {
+                printf("Error: Activation function should come after `:`.\n");
+                return -1;
+            }
+            type = functionName;
+            for (i=0;i<strlen(cur->t);i++)
+            {
+                if(!isDigit(cur->t[i]) && !isAlphabet(cur->t[i]))
+                    break;
+            }
+            
+            if(i != strlen(cur->t))
+            {
+                strncpy(buf,cur->t,i);
+                buf[i]=0;
+                
+                if(insWordBefore(cur, buf) == 0)
+                    return -1;
+                moveStringLower(cur->t,i);
+            }
+            else
+            {
+                act_tmp = cur->t;
+                cur = cur->next;
+            }
+            if(getActFlag(act_tmp) == -1)
+            {
+                printf("Error: Not recognized Activation function.\n");
+                return -1;
+            }
+        }
+        else if(strcmp(cur->t,"") == 0)
+        {
+            cur = deleteWord(cur);
+        }
+        else
+        {
+            printf("Error: unknown Syntax `%s`.\n",cur->t);
+            
+            return -1;
+        }
+
+    }
+    return l;
+}
+
 int createNet(struct words * w,int count){
 	
 	int i;
 	int *l;
-	
-	//if(neuromz->layer!=NULL)
+    uint16 * act;
+    uint16 tmp_act;
+    int opened= -1;
+    int li=0;
+
     if(neuromz)
 	{
 		printf("Error: should clear current network brfore.\n");
 		return -1;
 	}
 
-	l= (int *) malloc(sizeof(int)*(count-1));
-
+    count = newNetWords(w);   
+    if(count == -1)
+    {
+        return -1;
+    }
+	l= (int *) calloc(count,sizeof(int));
 	if(l==NULL)
 	{
 		printf("Error: unknwon error in memory.\n");
 		return -1;
 	}
-	struct words *wt=w;
-		
-	for (i=0;i<count-1;i++){
-		wt=wt->next;
-		l[i]=atof(wt->t);
-		if(l[i]==0){
+	
+	act = (uint16 *) malloc(sizeof(uint16)*(count));
+    if(act == NULL)
+    {
+        free(l);
+        printf("Error: unknwon error in memory.\n");
+		return -1;
+    }
 
-			printf("Error:invalid data.\n");
-			return -1;
-		}
-	}
+	struct words *wt=w->next;//skip `new` keyword
+    while(wt)
+    {
+        if(strcmp(wt->t, "[") == 0)
+        {
+            opened = li;
+        }
+        else if(isDigit(wt->t[0]))
+        {
+            l[li] = atoi(wt->t);
+            act[li] = SIGMOID;
+            li++;
+        }
+        else if(isAlphabet(wt->t[0]))
+        {
+            tmp_act = getActFlag(wt->t);
+            if(opened !=-1)
+            {
+                for(i = opened;i<li; i++)
+                {
+                    act[i] = tmp_act;
+                }
+            }
+            else
+            {
+                act[li - 1] = tmp_act;
+            }
+        }
+        wt = wt->next;
+    }
+
 	//initialize the network
-	if(INIT_NETWORK(l,NULL,count-1)<0){
+	if(INIT_NETWORK(l,act,count)<0){
 
 		printf("Error: can\'t initialize the Neural Network.\n");
 		free(l);
@@ -300,6 +554,8 @@ int createNet(struct words * w,int count){
 	}else
 		printf("Network initialized succesfully.\n");
 	free(l);
+    free(act);
+    
 	return 0;
 }
 
@@ -381,7 +637,6 @@ void doTrain(struct words * w,int count){
 		free(input);
 		return;
 	}
-
 	//getting the input values
 	for(i=0;i<neuromz->layer[0].size;i++)
 	{
@@ -393,7 +648,6 @@ void doTrain(struct words * w,int count){
 		}
 		input[i]=atof(wt->t);
 	}
-
 	//getting the target flag
 	wt=wt->next;
 	if(strcmp(wt->t,"-tar")!=0)
@@ -402,7 +656,6 @@ void doTrain(struct words * w,int count){
 		free(input);
 		return;
 	}
-
 	//getting the target values
 	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 	{
@@ -414,12 +667,10 @@ void doTrain(struct words * w,int count){
 		}
 		target[i]=atof(wt->t);
 	}
-	
 	if(count == layerSum + 2)
 	{
 		//add train set
 		addTrainSet(input,target);
-	
 		do{
 			curSet=neuromz->trnHead;
 			while(curSet!=NULL){
@@ -430,7 +681,6 @@ void doTrain(struct words * w,int count){
 				neuromz->steps++;
 				curSet=curSet->next;
 			}
-	
 		}while(cost_fn>neuromz->conv_value);
 	}
 	else
@@ -587,8 +837,7 @@ void addTrainSet(double *in, double *out){
 		cur->input[i]=in[i];
 	for(i=0;i<neuromz->layer[neuromz->layers_count-1].size;i++)
 		cur->output[i]=out[i];
-
-
+	
 }
 
 void clearTrainSet(){

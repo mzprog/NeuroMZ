@@ -53,7 +53,9 @@ int INIT_NETWORK(int * layer_number,uint16 *actf,int layer_size){
 	{
 		neuromz->layer[i].size=layer_number[i];
 		neuromz->layer[i].neural=(struct neurals *)calloc(neuromz->layer[i].size+1,sizeof(struct neurals));//i
-		neuromz->layer[i].ACT_FX=SIGMOID;//use sigmoid function as default		
+		neuromz->layer[i].ACT_FX=actf[i];//use sigmoid function as default		
+		neuromz->layer[i].actf = ACTf_Ptr(actf[i]);
+		neuromz->layer[i].actd = ACTd_Ptr(actf[i]);
 		if(neuromz->layer[i].neural==NULL)
 			return -1;
 		if(i==layer_size-1)
@@ -89,16 +91,13 @@ int INIT_NETWORK(int * layer_number,uint16 *actf,int layer_size){
 
 double * forward(double * data){
 
-
 	int i,j,k;
 	double sum;
 	for(i=0;i<neuromz->layer[0].size;i++)
 		neuromz->layer[0].neural[i].a=data[i];//we put it in the var a because input doesn't need activation functions
-
 	for(k=0;k<neuromz->layers_count-1;k++)//this loop to all layers.
 		for(j=0;j<neuromz->layer[k+1].size;j++)
 		{
-
 			sum=0;
 			for(i=0;i<neuromz->layer[k].size;i++){
 				sum+=neuromz->layer[k].neural[i].a*neuromz->layer[k].weight[i][j].weightV;//the sum here
@@ -106,9 +105,7 @@ double * forward(double * data){
 			sum+=neuromz->layer[k+1].neural[j].bais;//finaly add the bais
 			neuromz->layer[k+1].neural[j].x=sum;//then assign it to the x input
 			neuromz->layer[k+1].neural[j].a = neuromz->layer[k+1].actf(neuromz->layer[k+1].neural[j].x);
-			
-			//ACTfunc(neuromz->layer[k+1].neural[j].x,
-              //                                      neuromz->layer[k+1].ACT_FX);//at the end assign the value of activation funtion to var a.
+
 		}
 	for(i=0;i<neuromz->layer[k].size;i++)
 		neuromz->output_val[i]=neuromz->layer[k].neural[i].a;

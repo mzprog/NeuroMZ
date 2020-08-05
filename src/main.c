@@ -8,9 +8,6 @@
 
 extern char QUIT;//for quit the command function. 
 
-// extern char * filename;
-// extern struct layers * layer;
-// extern uint16 layers_count;
 
 extern NEUROMZ_data *neuromz;
 
@@ -328,6 +325,7 @@ void getCMD(char * text, int limit){
 
 void getStarter(){
 
+    printf("\033[1;36m"); 
 	if(neuromz == NULL)
     {
         printf("NO-NETWORK");
@@ -340,6 +338,7 @@ void getStarter(){
 		printf("%s",neuromz->filename);
 
 	printf(">>>");
+    printf("\033[0m"); 
 }
 
 void versionP()
