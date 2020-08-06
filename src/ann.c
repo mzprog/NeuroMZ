@@ -6,17 +6,6 @@
 #include "neuromz.h"
 #include "actFunc.h"
 
-// struct trainSet * trnHead=0;
-// double *  temp=0;//we should allocate as the bigest layer neurons.
-// char * filename;
-// double conv_value=0.005;
-// struct layers * layer=0;
-// uint16 layers_count;
-// unsigned long steps=0;
-// double * output_val=0;
-// double learnRate = 0.1;//we can change it later by the main function
-
-
 
 NEUROMZ_data * neuromz = NULL;
 
@@ -267,22 +256,24 @@ int saveNet(char * fileName){
 
 
 int loadNet(char * fileName){
-
+puts("a");
 	int i, j, k;
 	struct fileHead head;
 	struct trainSet * train_set;
+    uint16 * act;
 	int * tempI=0;
 	int max=0;
 	double * tempD=0;
 
-	FILE * fptr;
+    FILE * fptr;
     neuromz = (NEUROMZ_data *) calloc(1,sizeof(NEUROMZ_data));
     if(neuromz == NULL)
     {
         printf("Error: Unable to open in memory.\n");
 		return -1;
     }
-	fptr = fopen(fileName,"r");
+
+    fptr = fopen(fileName,"r");
 	if(fptr==NULL)
 		return -1;
 	//get the head data
@@ -292,19 +283,36 @@ int loadNet(char * fileName){
 	neuromz->learnRate=head.learnRate;
 	neuromz->conv_value=head.conv;
 
-	//get the layer neurons and init network
+    //get the layer neurons and init network
 	tempI=(int *)malloc(sizeof(int)*neuromz->layers_count);
 	if(tempI==NULL){
 		fclose(fptr);
 		return -1;
 	}
+	
+	act = (uint16 *) calloc(neuromz->layers_count,sizeof(uint16));
+    if(act == NULL)
+    {
+        fclose(fptr);
+        return -1;
+    }
+    
+    for(i = 0; i<neuromz->layers_count; i++)
+    {
+        act[i] = SIGMOID;
+    }
+	
 	fread(tempI,sizeof(int),neuromz->layers_count,fptr);
-	if(INIT_NETWORK(tempI, NULL, neuromz->layers_count)<0){
+	if(INIT_NETWORK(tempI, act, neuromz->layers_count)<0){
+        free(act);
 		free(tempI);
 		fclose(fptr);
 		return -1;
 	}
-	//get the activation function flags
+	
+	free(act);
+
+    //get the activation function flags
 	if(strcmp(head.version,"1.1")==0)
 	{
 		fread(tempI,sizeof(int),neuromz->layers_count,fptr);
@@ -335,6 +343,7 @@ int loadNet(char * fileName){
 		fclose(fptr);
 		return -1;
 	}
+
 	//clone the weights
 	for(k=0;k<neuromz->layers_count-1;k++){
 		for(j=0;j<neuromz->layer[k].size;j++){
@@ -345,12 +354,14 @@ int loadNet(char * fileName){
 			}
 		}
 	}
+
 	//clone the bais
 	for(k=1;k<neuromz->layers_count;k++){
 		fread(tempD,sizeof(double),neuromz->layer[k].size,fptr);
 		for(j=0;j<neuromz->layer[k].size;j++)
 			neuromz->layer[k].neural[j].bais=tempD[j];
 	}
+
 	//clone the train set
 	if(fread(tempD,sizeof(double),neuromz->layer[0].size,fptr)!=0)
 	{
@@ -430,6 +441,7 @@ int loadNet(char * fileName){
 
 
 	}
+
 	free(tempD);
 	free(tempI);
 	fclose(fptr);
