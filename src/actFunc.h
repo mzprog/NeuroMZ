@@ -21,6 +21,7 @@
 void * ACTf_Ptr(int flag);
 void * ACTd_Ptr(int flag);
 short getActFlag(char *name);
+char * getActName(unsigned short flag);
 
 double ACTx(double x);
 double ACTxDerv(double x);
