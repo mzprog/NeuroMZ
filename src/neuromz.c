@@ -110,7 +110,7 @@ void checkLine(char * line){
 	}
 	else if(strcmp(word->t,"show")==0)
 	{
-		showDet();
+		showDet(word,count_w);
 	}
 	else if(strcmp(word->t,"version")==0 || strcmp(word->t,"-v")==0)
 	{
@@ -876,8 +876,11 @@ int isNum(char *ch){
 	return 1;
 }
 
-void showDet()
+void showDet(struct words * w,int count)
 {
+    int i;
+    struct words * tmp = w->next;
+    int all = 0;
     if(neuromz == NULL)
     {
         printf("Error: no network opened in memory.\n");
@@ -888,6 +891,28 @@ void showDet()
 		printf("Error: NO neural network opened now.\n");
 		return;
 	}
+	
+	if(count>1)
+    {
+        while(tmp)
+        {
+            if(strcmp(tmp->t, "all") == 0)
+            {
+                all = 1;
+            }
+            else
+            {
+                if(strlen(tmp->t)>0)
+                {
+                    printf("Error: Syntax Error.\n");
+                    return;
+                }
+            }
+            
+            tmp = tmp->next;
+        }
+    }
+	
 
 	puts("Name:");
 	if(neuromz->filename==NULL)
@@ -899,8 +924,19 @@ void showDet()
 		printf("\t%s\n",neuromz->filename);
 	}
 	puts("Layers:");
-	printf("\t1 input layer [%d node(s)]\n\t%d hidden layer(s)\n\t1 output layer [%d node(s)]\n"
-			,neuromz->layer[0].size,neuromz->layers_count-2,neuromz->layer[neuromz->layers_count-1].size);
+	printf("\t1 input layer [%d node(s)][Activation `%s`]\n",neuromz->layer[0].size,getActName(neuromz->layer[0].ACT_FX));
+	printf("\t%d hidden layer(s)\n",neuromz->layers_count-2);
+    if(all == 1)
+    {
+        for(i=1; i<neuromz->layers_count-1; i++)
+        {
+            printf("\t\tlayer%d : [%d node(s)][Activation `%s`]\n",i, neuromz->layer[i].size, 
+                   getActName(neuromz->layer[i].ACT_FX));
+        }
+    }
+    printf("\t1 output layer [%d node(s)][Activation `%s`]\n",neuromz->layer[neuromz->layers_count-1].size, getActName(neuromz->layer[neuromz->layers_count-1].ACT_FX));
+    
+
 	puts("Learn Rate:");
 	printf("\t%g\n",neuromz->learnRate);
 	puts("Convarge value:");

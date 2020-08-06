@@ -22,6 +22,6 @@ void convarge(struct words * w,int count);
 void addTrainSet(double *in,double * out );//should convert to int
 void clearTrainSet();
 int isNum(char * ch);
-void showDet();
+void showDet(struct words * w,int count);
 
 #endif

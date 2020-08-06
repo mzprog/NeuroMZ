@@ -256,7 +256,6 @@ int saveNet(char * fileName){
 
 
 int loadNet(char * fileName){
-puts("a");
 	int i, j, k;
 	struct fileHead head;
 	struct trainSet * train_set;
