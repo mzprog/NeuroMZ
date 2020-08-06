@@ -4,72 +4,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
-double ACTfunc(double x, int flag)
-{
-	switch(flag)
-	{
-		case X :
-			return ACTx(x);
-		case SIGMOID :
-			return ACTsigmoid(x);
-		case TANH :
-			return ACTtanh(x);
-		case ARCTAN :
-			return ACTarctan(x);
-		case SOFTSIGN :
-			return ACTsoftsign(x);
-		case RELU :
-			return ACTrelu(x);
-		case LRELU :
-			return ACTlrelu(x);
-		case SOFTPLUS :
-			return ACTsoftplus(x);
-		case SINUSOID :
-			return ACTsinusoid(x);
-		case SINC :
-			return ACTsinc(x); 
-		case GAUSSIAN :
-			return ACTgaussian(x);
-		default :
-			printf("Error: no activation function determined.\n");
-			return 0;
-	}
-}
 
-
-double ACTderv(double x, int flag)
-{
-        switch(flag)
-        {
-                case X :
-                        return ACTxDerv(x);
-                case SIGMOID :
-                        return ACTsigmoidDerv(x);
-                case TANH :
-                        return ACTtanhDerv(x);
-                case ARCTAN :
-                        return ACTarctanDerv(x);
-                case SOFTSIGN :
-                        return ACTsoftsignDerv(x);
-                case RELU :
-                        return ACTreluDerv(x);
-                case LRELU :
-                        return ACTlreluDerv(x);
-                case SOFTPLUS :
-                        return ACTsoftplusDerv(x);
-                case SINUSOID :
-                        return ACTsinusoidDerv(x);
-                case SINC :
-                        return ACTsincDerv(x);
-		case GAUSSIAN :
-                        return ACTgaussianDerv(x);
-                default :
-                        printf("Error: no activation function determined.\n");
-                        return 0;
-        }
-}
-*/
+char * func[] = {
+    "x", // #           0
+    "sigmoid", // #     1
+    "tanh", // #        2 
+    "arctan", // #      3 
+    "softsign", // #    4
+    "relu", // #        5
+    "lrelu", // #       6
+    "softplus", // #    7
+    "sinusoid", // #    8
+    "sinc", // #        9
+    "gaussian" // #     10
+} ;
 
 
 void * ACTf_Ptr(int flag)
@@ -145,57 +93,31 @@ void * ACTd_Ptr(int flag)
  */
 short getActFlag(char *name)
 {
-    if(strcmp(name,"x") == 0)
+    int i;
+    
+    for(i = 0; i<ACT_LENGTH; i++)
     {
-        return X;
+        if(strcmp(func[i], name) ==0)
+        {
+            return i;
+        }
     }
-    else if(strcmp(name,"sigmoid") == 0)
-    {
-        return SIGMOID;
-    }
-    else if(strcmp(name,"tanh") == 0)
-    {
-        return TANH;
-    }
-    else if(strcmp(name,"arctan") == 0)
-    {
-        return ARCTAN;
-    }
-    else if(strcmp(name,"softsign") == 0)
-    {
-        return SOFTSIGN;
-    }
-    else if(strcmp(name,"relu") == 0)
-    {
-        return RELU;
-    }
-    else if(strcmp(name,"lrelu") == 0)
-    {
-        return LRELU;
-    }
-    else if(strcmp(name,"softplus") == 0)
-    {
-        return SOFTPLUS;
-    }
-    else if(strcmp(name,"sinusoid") == 0)
-    {
-        return SINUSOID;
-    }
-    else if(strcmp(name,"sinc") == 0)
-    {
-        return SINC;
-    }
-    else if(strcmp(name,"gaussian") == 0)
-    {
-        return GAUSSIAN;
-    }
-    else
-    {
-        return -1;
-    }
+    return -1;
+}
+
+char * getActName(unsigned short flag)
+{
+    return func[flag];
 }
 
 
+
+
+
+/*
+ * activation function and its derivatives 
+ * starting from here
+ */
 double ACTx(double x)
 {
 	return x;

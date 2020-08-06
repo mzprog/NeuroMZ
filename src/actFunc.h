@@ -13,6 +13,8 @@
 #define SINC 		9
 #define GAUSSIAN 	10
 
+#define ACT_LENGTH 11 // update when we will update the activation functions flags
+
 
 
 
