@@ -544,12 +544,23 @@ int createNet(struct words * w,int count){
         }
         wt = wt->next;
     }
+    
+    neuromz = (NEUROMZ_data *) calloc(1,sizeof(NEUROMZ_data));
+    if(neuromz == NULL)
+    {
+        printf("Error: Memory Failed.\n");
+		free(l);
+        free(act);
+		return -1;
+    }
+    neuromz->layers_count = count;
 
 	//initialize the network
-	if(INIT_NETWORK(l,act,count)<0){
+	if(INIT_NETWORK(l,act,neuromz->layers_count)<0){
 
 		printf("Error: can\'t initialize the Neural Network.\n");
 		free(l);
+        free(act);
 		return -1;
 	}else
 		printf("Network initialized succesfully.\n");
